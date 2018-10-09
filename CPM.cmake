@@ -322,18 +322,8 @@ endif()
 # file. See: http://stackoverflow.com/questions/12802377/in-cmake-how-can-i-find-the-directory-of-an-included-file
 set(CPM_DIR_OF_CPM ${CMAKE_CURRENT_LIST_DIR})
 
-# Clear out any definitions a parent_scope might have declared.
-set(CPM_DEFINITIONS)
-
-# Clear out any include directories.
-set(CPM_INCLUDE_DIRS)
-
 # Clear out exported modules from the parent.
 set(CPM_EXPORTED_MODULES)
-
-# Ensure we add an entry in the forward declaration map list for ourselves
-# (even if we don't even add a forward declaration).
-set(CPM_KV_LIST_FORWARD_DECL_MAP ${CPM_KV_LIST_FORWARD_DECL_MAP} ${CPM_UNIQUE_ID})
 
 # Increment the module hierarchy level if it exists.
 if (NOT DEFINED CPM_HIERARCHY_LEVEL)
@@ -353,14 +343,6 @@ if ((DEFINED CPM_SHOW_HIERARCHY) AND (CPM_SHOW_HIERARCHY))
   endif()
 endif()
 
-# Clear out the old CPM_KV_PREPROC_NS_MAP
-foreach(_cpm_kvName IN LISTS CPM_KV_LIST_PREPROC_NS_MAP)
-  set(CPM_KV_PREPROC_NS_MAP_${_cpm_kvName})
-endforeach()
-# Clear out both the list, and the 'for' variable
-set(CPM_KV_LIST_PREPROC_NS_MAP)
-set(_cpm_kvName)
-
 # Clear out the old CPM_KV_UNID_MAP
 foreach(_cpm_kvName IN LISTS CPM_KV_LIST_UNID_MAP)
   set(CPM_KV_UNID_MAP_${_cpm_kvName})
@@ -376,9 +358,6 @@ endforeach()
 # Clear out both the list, and the 'for' variable
 set(CPM_KV_LIST_SOURCEDIR_MAP)
 set(_cpm_kvName)
-
-set(CPM_ADDITIONAL_INCLUDE_DIRS)
-set(CPM_ADDITIONAL_DEFINITIONS)
 
 # Function for parsing arguments and values coming into the specified function
 # name 'f'. 'name' is the target name. 'ns' (namespace) is a value prepended
@@ -562,58 +541,6 @@ macro(_cpm_propogate_source_added_map_up)
   endif()
 endmacro()
 
-# Propogates include map up.
-macro(_cpm_propogate_include_map_up)
-  if (NOT CPM_HIERARCHY_LEVEL EQUAL 0)
-    foreach(_cpm_kvName IN LISTS CPM_KV_LIST_INCLUDE_MAP)
-      set(CPM_KV_INCLUDE_MAP_${_cpm_kvName} ${CPM_KV_INCLUDE_MAP_${_cpm_kvName}} PARENT_SCOPE)
-    endforeach()
-    set(_cpm_kvName) # Clear kvName
-
-    # Now propogate the list itself upwards.
-    set(CPM_KV_LIST_INCLUDE_MAP ${CPM_KV_LIST_INCLUDE_MAP} PARENT_SCOPE)
-  endif()
-endmacro()
-
-# Propogates definition map up.
-macro(_cpm_propogate_definition_map_up)
-  if (NOT CPM_HIERARCHY_LEVEL EQUAL 0)
-    foreach(_cpm_kvName IN LISTS CPM_KV_LIST_DEFINITION_MAP)
-      set(CPM_KV_DEFINITION_MAP_${_cpm_kvName} ${CPM_KV_DEFINITION_MAP_${_cpm_kvName}} PARENT_SCOPE)
-    endforeach()
-    set(_cpm_kvName) # Clear kvName
-
-    # Now propogate the list itself upwards.
-    set(CPM_KV_LIST_DEFINITION_MAP ${CPM_KV_LIST_DEFINITION_MAP} PARENT_SCOPE)
-  endif()
-endmacro()
-
-# Propogates forward declaration map up.
-macro(_cpm_propogate_forward_decl_map_up)
-  if (NOT CPM_HIERARCHY_LEVEL EQUAL 0)
-    foreach(_cpm_kvName IN LISTS CPM_KV_LIST_FORWARD_DECL_MAP)
-      set(CPM_KV_FORWARD_DECL_MAP_${_cpm_kvName} ${CPM_KV_FORWARD_DECL_MAP_${_cpm_kvName}} PARENT_SCOPE)
-    endforeach()
-    set(_cpm_kvName) # Clear kvName
-
-    # Now propogate the list itself upwards.
-    set(CPM_KV_LIST_FORWARD_DECL_MAP ${CPM_KV_LIST_FORWARD_DECL_MAP} PARENT_SCOPE)
-  endif()
-endmacro()
-
-# Propogates target library map up.
-macro(_cpm_propogate_target_lib_map_up)
-  if (NOT CPM_HIERARCHY_LEVEL EQUAL 0)
-    foreach(_cpm_kvName IN LISTS CPM_KV_LIST_LIB_TARGET_MAP)
-      set(CPM_KV_LIB_TARGET_MAP_${_cpm_kvName} ${CPM_KV_LIB_TARGET_MAP_${_cpm_kvName}} PARENT_SCOPE)
-    endforeach()
-    set(_cpm_kvName) # Clear kvName
-
-    # Now propogate the list itself upwards.
-    set(CPM_KV_LIST_LIB_TARGET_MAP ${CPM_KV_LIST_LIB_TARGET_MAP} PARENT_SCOPE)
-  endif()
-endmacro()
-
 # Propogates export module map up.
 macro(_cpm_propogate_export_map_up)
   if (NOT CPM_HIERARCHY_LEVEL EQUAL 0)
@@ -654,12 +581,9 @@ macro(CPM_InitModule)
     set(CPM_LAST_MODULE_NAME ${CPM_MODULE_NAME} PARENT_SCOPE)
   endif()
 
-  # Build the appropriate definition for the module. We stored the unique ID
-  _cpm_build_preproc_name(${CPM_MODULE_NAME} __CPM_TMP_VAR)
   if (NOT DEFINED CPM_UNIQUE_ID)
     set(CPM_UNIQUE_ID CPM_TESTING_UPPER_LEVEL_NAMESPACE)
   endif()
-  add_definitions("-D${__CPM_TMP_VAR}=${CPM_UNIQUE_ID}")
   set(__CPM_TMP_VAR) # Clean up
 
   # Propogate our exported modules up.
@@ -667,41 +591,13 @@ macro(CPM_InitModule)
     set(CPM_EXPORTED_MODULES ${CPM_EXPORTED_MODULES} PARENT_SCOPE)
   endif()
 
-  # Propogate up additional definitions and includes.
-  # (the reason we propogate this up: addition definitions can be modified
-  #  from the CPM_AddModule function one scope down)
-  set(CPM_ADDITIONAL_DEFINITIONS ${CPM_ADDITIONAL_DEFINITIONS} PARENT_SCOPE)
-
   # Setup the export map.
   set(CPM_KV_EXPORT_MAP_${CPM_UNIQUE_ID} ${CPM_EXPORTED_MODULES})
   set(CPM_KV_LIST_EXPORT_MAP ${CPM_KV_LIST_EXPORT_MAP} ${CPM_UNIQUE_ID})
 
   _cpm_propogate_source_added_map_up()
   _cpm_propogate_version_map_up()
-  _cpm_propogate_include_map_up()
-  _cpm_propogate_definition_map_up()
-  _cpm_propogate_target_lib_map_up()
   _cpm_propogate_export_map_up()
-  _cpm_propogate_forward_decl_map_up()
-
-  # Propogate CPM_LIBRARIES upwards and remove any duplicates that may exist.
-  # Added so only one target_link_libraries will be required at the application
-  # level instead of calling target_link_libraries in every module.
-  if (CPM_LIBRARIES)
-    set(CPM_LIBRARIES ${CPM_LIBRARIES} PARENT_SCOPE)
-  endif()
-
-  # Setup the module with appropriate definitions and includes.
-  # We can do this because we are not in a new scope; instead, we are in a macro
-  # which executes in the parent scope (since it is literally inserted into
-  # the parent scope).
-  add_definitions(${CPM_DEFINITIONS})
-  include_directories(SYSTEM ${CPM_INCLUDE_DIRS})
-
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-  # TODO: Remove the following line when we upgrade SCIRun.
-  include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty)
-
 endmacro()
 
 # This macro is meant to be used only by the root of the CPM dependency
@@ -740,76 +636,6 @@ macro(CPM_Finish)
 
   endif()
 endmacro()
-
-# This macro forces one, and only one, version of a module to be linked into
-# a program. If any part of the build chain uses a different version of the
-# module, then the CMake configure step will fail with a verbose error.
-macro(CPM_ForceOnlyOneModuleVersion)
-  # Set a flag in the parent namespace to force a check against module name
-  # and version.
-  set(CPM_FORCE_ONLY_ONE_MODULE_VERSION TRUE PARENT_SCOPE)
-endmacro()
-
-# This macro allows modules to expose additional include directories to
-# consumers. This is necessary for externals, and only exposes the include
-# definition to the direct consumer of the module. None of the consumer's
-# parents.
-macro(CPM_ExportAdditionalIncludeDir)
-  foreach (item ${ARGV})
-    get_filename_component(tmp_src_dir ${item} ABSOLUTE)
-    set(CPM_ADDITIONAL_INCLUDE_DIRS ${CPM_ADDITIONAL_INCLUDE_DIRS} "${tmp_src_dir}" PARENT_SCOPE)
-    set(CPM_ADDITIONAL_INCLUDE_DIRS ${CPM_ADDITIONAL_INCLUDE_DIRS} "${tmp_src_dir}")
-  endforeach()
-endmacro()
-
-# This macro allows modules to expose additional definitions.
-# As with ExportAdditionalIncludeDirectory, this only exposes the definition
-# to the direct consumer of the module. None of the consumer's parents.
-macro(CPM_ExportAdditionalDefinition)
-  foreach (item ${ARGV})
-    set(CPM_ADDITIONAL_DEFINITIONS ${CPM_ADDITIONAL_DEFINITIONS} ${item} PARENT_SCOPE)
-    set(CPM_ADDITIONAL_DEFINITIONS ${CPM_ADDITIONAL_DEFINITIONS} ${item})
-  endforeach()
-endmacro()
-
-macro(CPM_ExportAdditionalLibraryTarget)
-  foreach (item ${ARGV})
-    set(CPM_ADDITIONAL_TARGET_LIBS ${CPM_ADDITIONAL_TARGET_LIBS} ${item} PARENT_SCOPE)
-    set(CPM_ADDITIONAL_TARGET_LIBS ${CPM_ADDITIONAL_TARGET_LIBS} ${item})
-  endforeach()
-endmacro()
-
-# We use this code in multiple places to check that we don't have preprocessor
-# conflicts, and if we don't, then add the appropriate defintion.
-macro(_cpm_check_and_add_preproc defShortName fullUNID)
-  _cpm_build_preproc_name(${defShortName} __CPM_LAST_MODULE_PREPROC)
-
-  # Ensure that we don't have a name conflict
-  if (DEFINED CPM_KV_PREPROC_NS_MAP_${__CPM_LAST_MODULE_PREPROC})
-    if (NOT ${CPM_KV_PREPROC_NS_MAP_${__CPM_LAST_MODULE_PREPROC}} STREQUAL ${fullUNID})
-      message("CPM namespace conflict.")
-      message("  Current module name: ${name}.")
-      message("  Conflicting propressor macro: ${__CPM_LAST_MODULE_PREPROC}.")
-      message("  Our module UNID: ${fullUNID}.")
-      message("  Conflicting UNID: ${CPM_KV_PREPROC_NS_MAP_${__CPM_LAST_MODULE_PREPROC}}.")
-      message(FATAL_ERROR "CPM cannot continue without resolving namespace conflict.")
-    endif()
-  else()
-    set(CPM_KV_PREPROC_NS_MAP_${__CPM_LAST_MODULE_PREPROC} ${fullUNID} PARENT_SCOPE)
-
-    set(CPM_KV_LIST_PREPROC_NS_MAP ${CPM_KV_LIST_PREPROC_NS_MAP} ${__CPM_LAST_MODULE_PREPROC} PARENT_SCOPE)
-    set(CPM_KV_LIST_PREPROC_NS_MAP ${CPM_KV_LIST_PREPROC_NS_MAP} ${__CPM_LAST_MODULE_PREPROC})
-  endif()
-
-  # Add the interface definition to our list of preprocessor definitions.
-  # We don't set this in the parent scope because definitions will be propogated
-  # up to the parent at the end of our function.
-  set(CPM_DEFINITIONS ${CPM_DEFINITIONS} "-D${__CPM_LAST_MODULE_PREPROC}=${fullUNID}")
-
-  # Clear our variable.
-  set(__CPM_LAST_MODULE_PREPROC)
-endmacro()
-
 
 function(_cpm_print_with_hierarchy_level msg)
   # while ${number} is between 0 and 11
@@ -927,28 +753,6 @@ function(CPM_GetSourceDir VARIABLE_TO_SET name)
   endif()
 endfunction()
 
-macro(_cpm_generate_map_names)
-  set(INCLUDE_MAP_NAME    CPM_KV_INCLUDE_MAP_${__CPM_FULL_UNID})
-  set(DEFINITION_MAP_NAME CPM_KV_DEFINITION_MAP_${__CPM_FULL_UNID})
-  set(TARGET_LIB_MAP_NAME CPM_KV_LIB_TARGET_MAP_${__CPM_FULL_UNID})
-endmacro()
-
-macro(_cpm_apply_forward_declarations moduleUNID)
-  if (DEFINED CPM_KV_FORWARD_DECL_MAP_${moduleUNID})
-    set(fwd_decl_unid)
-    foreach(item IN LISTS CPM_KV_FORWARD_DECL_MAP_${moduleUNID})
-      if (DEFINED fwd_decl_unid)
-        set(module_specified_name ${item})
-        _cpm_check_and_add_preproc(${module_specified_name} ${fwd_decl_unid})
-        set(fwd_decl_unid)
-      else()
-        # The unid's module name is coming up next.
-        set(fwd_decl_unid ${item})
-      endif()
-    endforeach()
-  endif()
-endmacro()
-
 # This recursive function will ensure all modules, including modules exported
 # by the target module, are exported to the current level.
 macro(_cpm_handle_exports_for_module_rec recUNID)
@@ -963,31 +767,6 @@ macro(_cpm_handle_exports_for_module_rec recUNID)
     endforeach()
     # Export all necessary includes, definitions, and targets.
     foreach(module IN LISTS CPM_KV_EXPORT_MAP_${recUNID})
-      set(IMPORT_INCLUDE_MAP_NAME    CPM_KV_INCLUDE_MAP_${module})
-      set(IMPORT_DEFINITION_MAP_NAME CPM_KV_DEFINITION_MAP_${module})
-      set(IMPORT_TARGET_LIB_MAP_NAME CPM_KV_LIB_TARGET_MAP_${module})
-
-      set(CPM_INCLUDE_DIRS ${CPM_INCLUDE_DIRS} ${${IMPORT_INCLUDE_MAP_NAME}})
-      set(CPM_DEFINITIONS ${CPM_DEFINITIONS} ${${IMPORT_DEFINITION_MAP_NAME}})
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} ${${IMPORT_TARGET_LIB_MAP_NAME}})
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} PARENT_SCOPE)
-      set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} ${${IMPORT_TARGET_LIB_MAP_NAME}})
-      set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} PARENT_SCOPE)
-
-      # Find what the module named itself, and add that definition to our
-      # definitions.
-      if (DEFINED CPM_KV_SOURCE_ADDED_MAP_${module})
-        set(module_specified_name ${CPM_KV_SOURCE_ADDED_MAP_${module}})
-        _cpm_check_and_add_preproc(${module_specified_name} ${module})
-      else()
-        message(FATAL_ERROR "Logic error: All exported modules must be in the source map.")
-      endif()
-
-      # Apply the forward declarations being used. There is always one forward
-      # declaration in use for the parents of exported modules: one is required
-      # for the name that the parent module gave the exported module.
-      _cpm_apply_forward_declarations(${module})
-
       # Ensure we don't attempt to handle exports for a module we've already
       # covered.
       set(_CPM_SAVE_REC_MOD_VAR_${recUNID} ${_CPM_REC_MOD_VAR})
@@ -1086,6 +865,8 @@ function(CPM_AddModule name)
     set(__CPM_MODULE_SOURCE_DIR "${tmp_src_dir}")
 
   endif()
+  
+  get_filename_component(__CPM_GUESSED_PROJECT_NAME ${__CPM_PATH_UNID} NAME)
 
   # Cunstruct full UNID
   _cpm_make_valid_unid_or_path(__CPM_PATH_UNID)
@@ -1188,48 +969,23 @@ function(CPM_AddModule name)
 
     # Add the module's code.
     add_subdirectory("${__CPM_MODULE_SOURCE_DIR}" "${__CPM_MODULE_BIN_DIR}")
-
-    _cpm_generate_map_names()
-
-    # Add any includes the module wants to expose in the parent's scope.
-    if(DEFINED CPM_ADDITIONAL_INCLUDE_DIRS)
-      set(CPM_INCLUDE_DIRS ${CPM_INCLUDE_DIRS} ${CPM_ADDITIONAL_INCLUDE_DIRS})
+    
+    # If the module is unmanaged, use guessed name
+    if (NOT DEFINED CPM_LAST_MODULE_NAME)
+      message(STATUS "External module, guessing name as: " ${__CPM_GUESSED_PROJECT_NAME})
+      set(CPM_LAST_MODULE_NAME ${__CPM_GUESSED_PROJECT_NAME})
     endif()
-
-    # Add any definitions the module wants to expose in the parent's scope.
-    if(DEFINED CPM_ADDITIONAL_DEFINITIONS)
-      set(CPM_DEFINITIONS ${CPM_DEFINITIONS} ${CPM_ADDITIONAL_DEFINITIONS})
-    endif()
-
-    if(DEFINED CPM_ADDITIONAL_TARGET_LIBS)
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} ${CPM_ADDITIONAL_TARGET_LIBS})
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} PARENT_SCOPE)
-      set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} ${CPM_ADDITIONAL_TARGET_LIBS})
-      set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} PARENT_SCOPE)
-    endif()
-
-    # Add these additional include directories and definitions to our maps...
-    set(${INCLUDE_MAP_NAME} ${CPM_ADDITIONAL_INCLUDE_DIRS})
-    set(${DEFINITION_MAP_NAME} ${CPM_ADDITIONAL_DEFINITIONS})
-    set(${TARGET_LIB_MAP_NAME} ${CPM_ADDITIONAL_TARGET_LIBS})
 
     # Parse the arguments once again after adding the subdirectory (since we
     # cleared them all).
     _cpm_parse_arguments(CPM_AddModule _CPM_ "${ARGN}")
     _cpm_obtain_version_from_params(__CPM_NEW_GIT_TAG)
 
-    # Enforce one module version if the module has requested it.
-    if (DEFINED CPM_FORCE_ONLY_ONE_MODULE_VERSION)
-      if(CPM_FORCE_ONLY_ONE_MODULE_VERSION)
-        # Check version of __CPM_PATH_UNID in our pre-existing map key/value map.
-        if (DEFINED CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID})
-          if (NOT "${CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID}}" STREQUAL "${__CPM_NEW_GIT_TAG}")
-            message(FATAL_ERROR "Module '${name}' was declared as only allowing one version of its module. Another version of the module was found: ${CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID}}.")
-          endif()
-        endif()
+    if (DEFINED CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID})
+      if (NOT "${CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID}}" STREQUAL "${__CPM_NEW_GIT_TAG}")
+        message(FATAL_ERROR "Module '${name}' was declared as only allowing one version of its module. Another version of the module was found: ${CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID}}.")
       endif()
     endif()
-    set(CPM_FORCE_ONLY_ONE_MODULE_VERSION)
 
     # Add the module version to the map.
     if (NOT DEFINED CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID})
@@ -1238,24 +994,11 @@ function(CPM_AddModule name)
     endif()
     set(CPM_KV_MOD_VERSION_MAP_${__CPM_PATH_UNID} ${__CPM_NEW_GIT_TAG})
 
-    # Setup module interface definition. This is the name the module is using
-    # to identify itself in it's headers.
-    if (DEFINED CPM_LAST_MODULE_NAME)
-      _cpm_check_and_add_preproc(${CPM_LAST_MODULE_NAME} ${__CPM_FULL_UNID})
-    else()
-      message(FATAL_ERROR "A module (${name}) failed to define its name!")
-    endif()
-
     # Ensure we log that we have added this source directory.
     # Otherwise CMake will error out and tell us we can't use the same binary
     # directory for two source directories. We always start in the parent scope.
     set(CPM_KV_SOURCE_ADDED_MAP_${__CPM_FULL_UNID} ${CPM_LAST_MODULE_NAME})
     set(CPM_KV_LIST_SOURCE_ADDED_MAP ${CPM_KV_LIST_SOURCE_ADDED_MAP} ${__CPM_FULL_UNID})
-
-    set(CPM_INCLUDE_DIRS ${CPM_INCLUDE_DIRS} "${__CPM_MODULE_SOURCE_DIR}")
-
-    # Add ${__CPM_MODULE_SOURCE_DIR} to our include directory map.
-    set(${INCLUDE_MAP_NAME} ${${INCLUDE_MAP_NAME}} "${__CPM_MODULE_SOURCE_DIR}")
 
     # Our exports should have been added to the appropriate map in our scope.
     # So we ignore CPM_EXPORTED_MODULES (which should not be placed in our
@@ -1264,55 +1007,10 @@ function(CPM_AddModule name)
 
     # Reset the exported modules to its value before we made the add_subdirectory call.
     set(CPM_EXPORTED_MODULES ${CPM_SAVE_EXPORTED_MODULES})
-
-    # Make sure there are entries for us in the include and definition lists.
-    set(CPM_KV_LIST_INCLUDE_MAP ${CPM_KV_LIST_INCLUDE_MAP} ${__CPM_FULL_UNID})
-    set(CPM_KV_LIST_DEFINITION_MAP ${CPM_KV_LIST_DEFINITION_MAP} ${__CPM_FULL_UNID})
-    set(CPM_KV_LIST_LIB_TARGET_MAP ${CPM_KV_LIST_LIB_TARGET_MAP} ${__CPM_FULL_UNID})
-
+    
   else()
-    # Set the name the module is using to setup its namespaces.
-    set(CPM_LAST_MODULE_NAME ${CPM_KV_SOURCE_ADDED_MAP_${__CPM_FULL_UNID}})
-
-    _cpm_generate_map_names()
-
-    # Ensure our module's preprocessor definition is present.
-    _cpm_check_and_add_preproc(${CPM_LAST_MODULE_NAME} ${__CPM_FULL_UNID})
-
-    # Lookup the module by full unique ID and pull their definitions and additional include directories.
-    if (DEFINED ${INCLUDE_MAP_NAME})
-      set(CPM_INCLUDE_DIRS ${CPM_INCLUDE_DIRS} ${${INCLUDE_MAP_NAME}})
-    endif()
-
-    if (DEFINED ${DEFINITION_MAP_NAME})
-      set(CPM_DEFINITIONS ${CPM_DEFINITIONS} ${${DEFINITION_MAP_NAME}})
-    endif()
-
-    if(DEFINED ${TARGET_LIB_MAP_NAME})
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} ${${TARGET_LIB_MAP_NAME}})
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} PARENT_SCOPE)
-      set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} ${${TARGET_LIB_MAP_NAME}})
-      set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} PARENT_SCOPE)
-    endif()
-
     _cpm_handle_exports_for_module(${__CPM_FULL_UNID})
-
   endif()
-
-  # Build forward declarations.
-  if (DEFINED CPM_SAVED_PARENT_UNIQUE_ID)
-    if (((DEFINED _CPM_FORWARD_DECLARATION) AND (_CPM_FORWARD_DECLARATION)) OR
-        ((DEFINED _CPM_EXPORT_MODULE) AND (_CPM_EXPORT_MODULE)))
-      # Populate our parent's forward decl map with the name they have
-      # chosen for us. Remember, this is a map of pairs.
-      set(map_name CPM_KV_FORWARD_DECL_MAP_${CPM_SAVED_PARENT_UNIQUE_ID})
-      set(${map_name} ${${map_name}} ${__CPM_FULL_UNID})
-      set(${map_name} ${${map_name}} ${name})
-    endif()
-  endif()
-
-  # Apply forward declarations for the module.
-  _cpm_apply_forward_declarations(${__CPM_FULL_UNID})
 
   # If we are exporting this module, be sure the parent knows.
   if ((DEFINED _CPM_EXPORT_MODULE) AND (_CPM_EXPORT_MODULE))
@@ -1320,45 +1018,11 @@ function(CPM_AddModule name)
     set(CPM_EXPORTED_MODULES ${CPM_EXPORTED_MODULES} ${__CPM_FULL_UNID})
   endif()
 
-  # Append target to pre-existing libraries.
-  if (TARGET ${CPM_TARGET_NAME})
-    get_target_property(TARGET_TYPE ${CPM_TARGET_NAME} TYPE)
-    if (("${TARGET_TYPE}" STREQUAL "STATIC_LIBRARY")
-      OR ("${TARGET_TYPE}" STREQUAL "MODULE_LIBRARY")
-      OR ("${TARGET_TYPE}" STREQUAL "SHARED_LIBRARY"))
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} "${CPM_TARGET_NAME}")
-      set(CPM_LIBRARIES ${CPM_LIBRARIES} PARENT_SCOPE)
-    endif()
-    set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} "${CPM_TARGET_NAME}" PARENT_SCOPE)
-  else()
-    add_custom_target(${CPM_TARGET_NAME})
-    set(CPM_DEPENDENCIES ${CPM_DEPENDENCIES} ${CPM_TARGET_NAME} PARENT_SCOPE)
-  endif()
-
-  # Set the appropriate preprocessor definition for how *we* named the module.
-  # This is different than the preprocessor definition that the module itself
-  # used in its name. But only do this if our name differs from what the
-  # module named itself.
-  if (NOT ${name} STREQUAL ${CPM_LAST_MODULE_NAME})
-    _cpm_check_and_add_preproc(${name} ${__CPM_FULL_UNID})
-  endif()
-
-  # TODO: Remove the following line when we upgrade SCIRun.
-  set(CPM_INCLUDE_DIRS ${CPM_INCLUDE_DIRS} "${__CPM_MODULE_SOURCE_DIR}/3rdParty")
-  set(CPM_DEFINITIONS ${CPM_DEFINITIONS} PARENT_SCOPE)
-  set(CPM_INCLUDE_DIRS ${CPM_INCLUDE_DIRS} PARENT_SCOPE)
-
   # Now propogate the version map upwards (we don't really *need* to do this).
   # But makes it clear what we are trying to do.
   _cpm_propogate_version_map_up()
   _cpm_propogate_source_added_map_up()
-
-  # Export the rest of the maps for exported modules and the like.
-  _cpm_propogate_include_map_up()
-  _cpm_propogate_definition_map_up()
-  _cpm_propogate_target_lib_map_up()
   _cpm_propogate_export_map_up()
-  _cpm_propogate_forward_decl_map_up()
 
   # Propogate CPM_LIBRARIES upwards and remove any duplicates that may exist.
   # Added so only one target_link_libraries will be required at the application
