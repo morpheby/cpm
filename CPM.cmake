@@ -790,11 +790,9 @@ macro(_cpm_handle_exports_for_module recUNID)
   set(_CPM_REC_MOD_VAR)
 endmacro()
 
-# name - Required as this name determines what preprocessor definition will
-#        be generated for this module.
-function(CPM_AddModule name)
+function(CPM_AddModule)
 
-  _cpm_debug_log("Beginning module: ${name}")
+  _cpm_debug_log("Beginning module")
   _cpm_debug_log("Hierarchy level: ${CPM_HIERARCHY_LEVEL}")
   if (DEFINED CPM_MODULE_CACHE_DIR)
     _cpm_debug_log("Using CPM cache dir: ${CPM_MODULE_CACHE_DIR}")

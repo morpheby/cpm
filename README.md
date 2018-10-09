@@ -71,17 +71,17 @@ self-contained and will build as-is:
   #------------------------------------------------------------------------------
 
   # ++ MODULE: OpenGL platform
-  CPM_AddModule("gl_platform"
+  CPM_AddModule(
     GIT_REPOSITORY "https://github.com/iauns/cpm-gl-platform"
     GIT_TAG "1.3.5")
 
   # ++ MODULE: aabb
-  CPM_AddModule("aabb"
+  CPM_AddModule(
     GIT_REPOSITORY "https://github.com/iauns/cpm-glm-aabb"
     GIT_TAG "1.0.3")
 
   # ++ EXTERNAL-MODULE: GLM
-  CPM_AddModule("glm"
+  CPM_AddModule(
     GIT_REPOSITORY "https://github.com/iauns/cpm-glm"
     GIT_TAG "1.0.2"
     USE_EXISTING_VER TRUE)
@@ -227,8 +227,7 @@ must be present in your call to `CPM_AddModule`. Should be called before
 either `CPM_Finish` or `CPM_InitModule`
 
 ```cmake
-  CPM_AddModule(<name>           # Required - Module target name. Used to generate your 
-                                 # preprocessor definition.
+  CPM_AddModule(
     [GIT_REPOSITORY repo]        # Git repository that corresponds to a CPM module.
                                  # If this argument is not specfied, then SOURCE_DIR must be set.
     [GIT_TAG tag]                # Git tag to checkout. Tags, shas, and branches all work.
